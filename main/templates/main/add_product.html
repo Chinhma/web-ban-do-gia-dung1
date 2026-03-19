@@ -1,4 +1,6 @@
-{% extends 'main/layout.html' %} {% block content %}
+{% extends 'main/layout.html' %} {% block extra_css %}
+<link rel="stylesheet" href="{% static 'main/css/add_product.css' %}" />
+{% endblock %} {% block content %}
 
 <div class="container mt-4" style="max-width: 720px">
   <h2>Thêm sản phẩm</h2>
@@ -67,6 +69,24 @@
 
 {% endblock %}
 <script>
+    document
+      .getElementById("image-input")
+      .addEventListener("change", function (e) {
+        const file = e.target.files[0];
+        const p = document.getElementById("preview");
+        p.innerHTML = "";
+        if (!file) return;
+        const img = document.createElement("img");
+        img.style.maxWidth = "160px";
+        img.style.borderRadius = "8px";
+        img.src = URL.createObjectURL(file);
+        p.appendChild(img);
+      });
+  {% endblock %}
+  {% block extra_js %}
+    <script src="{% static 'main/js/add_product.js' %}">
+</script>
+<script>
   document
     .getElementById("image-input")
     .addEventListener("change", function (e) {
@@ -81,3 +101,4 @@
       p.appendChild(img);
     });
 </script>
+{% endblock %}

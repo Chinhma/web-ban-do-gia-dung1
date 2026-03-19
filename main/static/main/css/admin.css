@@ -1,0 +1,22 @@
+/* Admin panel styles (stub) */
+.admin-navbar {
+  background: #0b63d6;
+  color: #fff;
+  padding: 12px 0;
+}
+.admin-navbar .container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.admin-sidebar {
+  width: 220px;
+  float: left;
+  padding: 18px;
+  background: #f7f9fb;
+  min-height: calc(100vh - 60px);
+}
+.admin-content {
+  margin-left: 240px;
+  padding: 20px;
+}

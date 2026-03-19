@@ -1,4 +1,6 @@
-{% extends 'main/layout.html' %} {% block content %}
+{% extends 'main/layout.html' %} {% block extra_css %}
+<link rel="stylesheet" href="{% static 'main/css/edit_product.css' %}" />
+{% endblock %} {% block content %}
 
 <div class="container mt-4">
   <h2>Sửa sản phẩm</h2>
@@ -95,6 +97,8 @@
   </form>
 </div>
 
+{% endblock %} {% block extra_js %}
+<script src="{% static 'main/js/edit_product.js' %}"></script>
 <script>
   document
     .getElementById("image-input")
@@ -110,5 +114,4 @@
       p.appendChild(img);
     });
 </script>
-
 {% endblock %}

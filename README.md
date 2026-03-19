@@ -1,182 +1,184 @@
-I. GIỚI THIỆU CHUNG
+# HomeStore — Hướng dẫn sử dụng (Tiếng Việt)
 
-Dự án xây dựng website bán đồ gia dụng trực tuyến sử dụng Django, hỗ trợ đầy đủ các chức năng:
+Phiên bản: bản nội bộ (local dev)
 
-Xem sản phẩm
+---
 
-Đăng ký / đăng nhập người dùng
+1. Giới thiệu
 
-Phân quyền User / Admin
+---
 
-Đặt hàng và quản lý đơn hàng
+HomeStore là dự án mẫu bán hàng trực tuyến xây dựng bằng Django. Ứng dụng hỗ trợ: quản lý sản phẩm, giỏ hàng, đặt hàng, quản trị (Admin dashboard) và quản lý trạng thái đơn hàng theo luồng thực tế (Chờ xác nhận → Đã xác nhận → Vận chuyển → Đang giao → Hoàn thành / Bị từ chối).
 
-Dashboard cho Admin
+2. Yêu cầu hệ thống
 
-Upload ảnh sản phẩm
+---
 
-Thống kê cơ bản
+- Python 3.8+ (khuyến nghị 3.10+)
+- SQLite (mặc định) hoặc cơ sở dữ liệu khác (Postgres, MySQL)
+- Pip
 
-Website hướng tới mô phỏng một hệ thống bán hàng thực tế, có nghiệp vụ rõ ràng và phân quyền đầy đủ theo yêu cầu học phần PAD341.
+3. Cài đặt nhanh (local)
 
-II. PHÂN QUYỀN NGƯỜI DÙNG (ROLE)
-🔹 1. Guest (Chưa đăng nhập)
+---
 
-Xem danh sách sản phẩm
+1. Clone repository và chuyển thư mục dự án:
 
-Tìm kiếm sản phẩm theo tên / danh mục
+   git clone <repo-url>
+   cd web1
 
-Không được đặt hàng
+2. Tạo virtualenv và cài phụ thuộc:
 
-🔹 2. User (Đã đăng nhập)
+   python -m venv venv
+   venv\Scripts\activate # Windows
+   pip install -r requirements.txt
 
-Xem sản phẩm
+3. Áp dụng migrations:
 
-Thêm sản phẩm vào giỏ hàng
+   python manage.py migrate
 
-Mua ngay / thanh toán
+4. Tạo tài khoản Admin (superuser):
 
-Xem đơn hàng của bản thân
+   python manage.py createsuperuser
 
-Đăng xuất
+5. Khởi động ứng dụng:
 
-🔹 3. Admin
+   python manage.py runserver
 
-Đăng nhập với tài khoản is_staff = True
+   Mở trình duyệt: http://127.0.0.1:8000
 
-Thêm / sửa / xóa sản phẩm
+6. Cấu trúc chính của dự án
 
-Upload ảnh sản phẩm
+---
 
-Xem Dashboard Admin
+- `main/` : app chính chứa models, views, templates, static
+- `media/` : nơi lưu ảnh sản phẩm upload
+- `db.sqlite3` : database (local)
+- `manage.py` : lệnh điều hành Django
 
-Xem danh sách đơn hàng
+5. Mô tả chức năng quan trọng
 
-Thống kê tổng đơn hàng, doanh thu
+---
 
-⚠️ Dashboard Admin chỉ hiển thị khi đăng nhập bằng tài khoản Admin
+- Sản phẩm (Product): có tên, giá, tồn kho, ảnh, danh mục
+- Đơn hàng (Order): lưu trạng thái và thông tin giao hàng
+- Luồng trạng thái đơn hàng (gợi ý hiện tại):
+  - `pending` — Chờ xác nhận (mặc định khi khách đặt)
+  - `approved` — Đã xác nhận (sau khi admin xác nhận / hệ thống tự chuyển khi thanh toán thành công)
+  - `shipping` — Chuẩn bị vận chuyển
+  - `delivering` — Đang giao
+  - `review` — Chờ đánh giá / Hoàn thành
+  - `rejected` — Bị từ chối / Hủy
 
-III. CÁC THỰC THỂ (MODEL)
+6. Hướng dẫn admin (cách vận hành đơn hàng)
 
-Dự án hiện có tối thiểu 5 thực thể có quan hệ, đáp ứng yêu cầu đề tài:
+---
 
-User (Django auth)
+- Truy cập Admin Dashboard: `/admin-panel/` (hoặc trang Django admin `/admin`)
+- Ở trang quản lý đơn hàng (Admin orders), quy trình gợi ý:
+  1.  Đơn mới sẽ ở trạng thái **Chờ xác nhận** (`pending`).
+  2.  Admin có thể **Xác nhận** (không gọi là “Duyệt” nữa) — hệ thống kiểm tra tồn kho và trừ tồn.
+  3.  Sau khi xác nhận, admin hoặc hệ thống chuyển sang **Chuẩn bị vận chuyển** (`shipping`), rồi **Đang giao** (`delivering`), rồi **Hoàn thành** (`review`).
+  4.  Admin chỉ can thiệp khi có lỗi (hết hàng, thanh toán thất bại, thông tin không hợp lệ).
 
-Category
+Gợi ý cho developer: nếu muốn hệ thống tự động chuyển trạng thái (như Shopee), bạn có thể:
 
-Product
+- Tạo task nền (cron / Celery) kiểm tra thanh toán và tồn kho, rồi cập nhật `order.status` tương ứng.
 
-Order
+7. Cài đặt media & static
 
-OrderItem
+---
 
-🔗 Quan hệ chính
+- Trong môi trường dev, Django phục vụ `MEDIA` và `STATIC` nếu `DEBUG = True`.
+- Ảnh sản phẩm upload lưu trong `media/products/`.
 
-User — Order (1-n)
+8. Migrations & seed dữ liệu
 
-Order — OrderItem (1-n)
+---
 
-Category — Product (1-n)
+- Tạo migration khi thay đổi model:
 
-Product — OrderItem (1-n)
+  python manage.py makemigrations
+  python manage.py migrate
 
-IV. NGHIỆP VỤ CHÍNH (BUSINESS LOGIC)
+- Nếu có script seed (ví dụ `seed_categories.py`), chạy để thêm dữ liệu mẫu.
 
-1.  Đặt hàng
+9. Chạy test (nếu có)
 
-User chọn sản phẩm → nhập thông tin giao hàng
+---
 
-Hệ thống kiểm tra số lượng tồn kho
+Nếu dự án có tests, chạy:
 
-Tạo đơn hàng với trạng thái pending
+    python manage.py test
 
-2.  Quản lý đơn hàng
+10. Vấn đề thường gặp
 
-Admin xem danh sách đơn
+---
 
-Có thể duyệt / từ chối đơn hàng
+- Lỗi không tìm thấy media: kiểm tra `MEDIA_ROOT` và `MEDIA_URL` trong `web1/settings.py`.
+- Lỗi CSRF trên các form AJAX: đảm bảo token được gửi trong header `X-CSRFToken` hoặc trường `csrfmiddlewaretoken`.
 
-Trạng thái: pending / approved / rejected
+11. Ghi chú & tiếp theo
 
-V. THỐNG KÊ – BÁO CÁO
+---
 
-Trong Dashboard Admin có:
-
-Tổng số đơn hàng
-
-Tổng doanh thu
-
-Danh sách đơn hàng gần nhất
-
-Đáp ứng yêu cầu thống kê – báo cáo của đề PAD341.
-
-VI. UPLOAD ẢNH SẢN PHẨM
-
-Sử dụng ImageField
-
-Upload ảnh từ form Admin
-
-Lưu trữ trong thư mục /media/
-
-Chỉ cho phép định dạng ảnh hợp lệ (jpg, png…)
-
-VII. CẤU TRÚC THƯ MỤC
-web1/
-│
-├── main/
-│ ├── migrations/
-│ ├── templates/
-│ │ └── main/
-│ │ ├── home.html
-│ │ ├── cart.html
-│ │ ├── checkout.html
-│ │ ├── checkout_now.html
-│ │ ├── dashboard.html
-│ │ ├── add_product.html
-│ │ ├── edit_product.html
-│ │ └── layout.html
-│ │
-│ ├── static/
-│ │ └── main/
-│ │ ├── css/
-│ │ ├── js/
-│ │ └── images/
-│ │
-│ ├── models.py
-│ ├── views.py
-│ ├── urls.py
-│ └── forms.py
-│
-├── media/
-├── db.sqlite3
-├── manage.py
-└── README.md
-VIII. HƯỚNG DẪN CHẠY DỰ ÁN
-🔧 1. Cài môi trường
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-🔧 2. Migration database
-python manage.py makemigrations
-python manage.py migrate
-🔧 3. Tạo tài khoản Admin
-python manage.py createsuperuser
-▶️ 4. Chạy server
-python manage.py runserver 8888
-Truy cập:
-
-Website: http://127.0.0.1:8888
-
-Admin: http://127.0.0.1:8888/admin
-IX. KẾT LUẬN
-
-Dự án đã đáp ứng đầy đủ yêu cầu của học phần PAD341:
-
-Có nghiệp vụ rõ ràng
-
-Phân quyền chuẩn
-
-Dữ liệu đầy đủ
-
-Giao diện hoàn chỉnh
-
-Có khả năng mở rộng thêm thanh toán online, biểu đồ nâng cao
+12. Cấu hình gửi email (SMTP) — gửi thật (production)
+
+---
+
+Mặc định trong `settings.py` đang dùng `console.EmailBackend` để dễ phát triển (email được in ra console).
+Để gửi email thật (SMTP), cấu hình các biến môi trường trước khi chạy server.
+
+Biến môi trường cần thiết:
+
+- `DJANGO_EMAIL_BACKEND`: (tuỳ chọn) ví dụ `django.core.mail.backends.smtp.EmailBackend`
+- `EMAIL_HOST`: ví dụ `smtp.gmail.com`
+- `EMAIL_PORT`: ví dụ `587`
+- `EMAIL_USE_TLS`: `True` hoặc `False`
+- `EMAIL_HOST_USER`: email dùng để gửi (tên đăng nhập SMTP)
+- `EMAIL_HOST_PASSWORD`: mật khẩu SMTP (với Gmail, dùng app password)
+- `DEFAULT_FROM_EMAIL`: địa chỉ From trong email (ví dụ `no-reply@yourdomain.com`)
+
+Ví dụ (.env hoặc export):
+
+Windows PowerShell:
+
+```powershell
+$env:DJANGO_EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+$env:EMAIL_HOST = 'smtp.gmail.com'
+$env:EMAIL_PORT = '587'
+$env:EMAIL_USE_TLS = 'True'
+$env:EMAIL_HOST_USER = 'youremail@gmail.com'
+$env:EMAIL_HOST_PASSWORD = 'your_app_password'
+$env:DEFAULT_FROM_EMAIL = 'no-reply@yourdomain.com'
+python manage.py runserver
+```
+
+Linux / macOS:
+
+```bash
+export DJANGO_EMAIL_BACKEND='django.core.mail.backends.smtp.EmailBackend'
+export EMAIL_HOST='smtp.gmail.com'
+export EMAIL_PORT='587'
+export EMAIL_USE_TLS='True'
+export EMAIL_HOST_USER='youremail@gmail.com'
+export EMAIL_HOST_PASSWORD='your_app_password'
+export DEFAULT_FROM_EMAIL='no-reply@yourdomain.com'
+python manage.py runserver
+```
+
+Gmail notes:
+
+- Google yêu cầu tạo "App Password" cho ứng dụng hoặc bật cấu hình OAuth/SMTP relay; thường không dùng mật khẩu chính.
+
+Kiểm tra flow quên mật khẩu (test):
+
+1. Mở `/forgot-password/`, nhập email đã đăng ký.
+2. Nếu cấu hình SMTP đúng — email chứa link reset sẽ được gửi tới địa chỉ đó.
+3. Nếu còn dùng `console` backend, email sẽ được in ra console nơi `runserver` chạy (dễ debug).
+
+Nếu muốn, tôi sẽ:
+
+- A: Thêm ví dụ `.env.example` và hướng dẫn dùng `python-dotenv` hoặc `django-environ` để load biến môi trường, hoặc
+- B: Cấu hình gửi email qua Gmail (thêm hướng dẫn tạo App Password và bảo mật), hoặc
+- C: Tự cấu hình SMTP cho bạn (bạn cung cấp thông tin host/port và tôi cập nhật `settings.py` tạm thời).

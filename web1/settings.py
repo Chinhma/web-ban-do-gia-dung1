@@ -11,9 +11,20 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Optional: load environment variables from a .env file if python-dotenv is installed
+try:
+    from dotenv import load_dotenv
+except Exception:
+    load_dotenv = None
+
+DOTENV_PATH = BASE_DIR / '.env'
+if load_dotenv is not None and DOTENV_PATH.exists():
+    load_dotenv(DOTENV_PATH)
 
 
 # Quick-start development settings - unsuitable for production
@@ -41,6 +52,9 @@ INSTALLED_APPS = [
     'main',
 
 ]
+
+# Use BigAutoField for auto-created primary keys
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -115,11 +129,25 @@ USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-LOGIN_URL = 'login'
+# Auth settings
+LOGIN_URL = 'main:login'
+LOGIN_REDIRECT_URL = 'main:home'
+
+# Email configuration
+# By default use console backend for development (prints emails to the runserver console).
+# To send real email in production, set the following environment variables.
+EMAIL_BACKEND = os.environ.get('DJANGO_EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 25))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'False') == 'True'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'no-reply@homestore.local')

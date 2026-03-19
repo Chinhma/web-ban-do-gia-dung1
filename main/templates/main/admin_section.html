@@ -1,0 +1,232 @@
+{% extends 'main/layout.html' %} {% block content %}
+<div class="container mt-4">
+  <div class="dashboard-header">
+    <div class="dashboard-title">{{ title }}</div>
+    <a href="{% url 'main:dashboard' %}" class="btn btn-outline"
+      >Quay lại Dashboard</a
+    >
+  </div>
+
+  <div class="panel">
+    <div class="panel-body">
+      <h3>{{ title }}</h3>
+      {% if section == 'products' %}
+      <p>Danh sách sản phẩm hiện tại:</p>
+      <div class="table-responsive">
+        <table class="table">
+          <thead class="thead-dark">
+            <tr>
+              <th>Tên</th>
+              <th>Giá</th>
+              <th>Kho</th>
+              <th>Hành động</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in products %}
+            <tr>
+              <td>{{ p.name }}</td>
+              <td>{{ p.price|intcomma }} đ</td>
+              <td>{{ p.stock }}</td>
+              <td>
+                <a
+                  class="action-btn action-edit"
+                  href="{% url 'main:edit_product' p.id %}"
+                  >Sửa</a
+                >
+                <a
+                  class="action-btn action-delete"
+                  href="{% url 'main:delete_product' p.id %}"
+                  onclick="return confirm('Xóa?');"
+                  >Xóa</a
+                >
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4">Không có sản phẩm.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% elif section == 'orders' %}
+      <p>Danh sách đơn hàng (toàn bộ):</p>
+      <div style="margin: 10px 0">
+        <a
+          class="btn btn-secondary"
+          href="{% url 'main:admin_section' 'orders' %}"
+          >Tất cả đơn hàng</a
+        >
+        <a
+          class="btn btn-secondary"
+          href="{% url 'main:admin_section' 'orders' %}?status=pending"
+          >Đơn chờ xác nhận</a
+        >
+        <a
+          class="btn btn-secondary"
+          href="{% url 'main:admin_section' 'orders' %}?status=shipping"
+          >Đơn đang giao</a
+        >
+        <a
+          class="btn btn-secondary"
+          href="{% url 'main:admin_section' 'orders' %}?status=completed"
+          >Đơn hoàn thành</a
+        >
+        <a
+          class="btn btn-secondary"
+          href="{% url 'main:admin_section' 'orders' %}?status=cancelled"
+          >Đơn đã hủy</a
+        >
+      </div>
+      <div class="table-responsive">
+        <table class="table">
+          <thead class="thead-dark">
+            <tr>
+              <th>#</th>
+              <th>Khách</th>
+              <th>Tổng</th>
+              <th>Trạng thái</th>
+              <th>Hành động</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for o in orders %}
+            <tr>
+              <td>#{{ o.id }}</td>
+              <td>{{ o.user.username }}</td>
+              <td>{{ o.total|intcomma }} đ</td>
+              <td>{{ o.get_status_display }}</td>
+              <td>
+                <a
+                  href="{% url 'main:order_detail' o.id %}"
+                  class="btn btn-outline"
+                  >Xem</a
+                >
+                {% if o.status == 'pending' %}
+                <form
+                  method="post"
+                  action="{% url 'main:review_order' o.id 'approve' %}"
+                  style="display: inline"
+                >
+                  {% csrf_token %}
+                  <button
+                    type="submit"
+                    class="btn btn-success btn-sm"
+                    onclick="return confirm('Duyệt đơn hàng này?');"
+                  >
+                    Duyệt
+                  </button>
+                </form>
+                <form
+                  method="post"
+                  action="{% url 'main:review_order' o.id 'reject' %}"
+                  style="display: inline; margin-left: 6px"
+                >
+                  {% csrf_token %}
+                  <button
+                    type="submit"
+                    class="btn btn-danger btn-sm"
+                    onclick="return confirm('Từ chối đơn hàng này?');"
+                  >
+                    Từ chối
+                  </button>
+                </form>
+                {% endif %} {% if o.status == 'approved' %}
+                <form
+                  method="post"
+                  action="{% url 'main:review_order' o.id 'ship' %}"
+                  style="display: inline; margin-left: 6px"
+                >
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-warning btn-sm">
+                    Chuyển giao
+                  </button>
+                </form>
+                <form
+                  method="post"
+                  action="{% url 'main:review_order' o.id 'cancel' %}"
+                  style="display: inline; margin-left: 6px"
+                >
+                  {% csrf_token %}
+                  <button
+                    type="submit"
+                    class="btn btn-danger btn-sm"
+                    onclick="return confirm('Xác nhận huỷ đơn?');"
+                  >
+                    Huỷ
+                  </button>
+                </form>
+                {% endif %} {% if o.status == 'shipping' %}
+                <form
+                  method="post"
+                  action="{% url 'main:review_order' o.id 'complete' %}"
+                  style="display: inline; margin-left: 6px"
+                >
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-success btn-sm">
+                    Hoàn thành
+                  </button>
+                </form>
+                <form
+                  method="post"
+                  action="{% url 'main:review_order' o.id 'cancel' %}"
+                  style="display: inline; margin-left: 6px"
+                >
+                  {% csrf_token %}
+                  <button
+                    type="submit"
+                    class="btn btn-danger btn-sm"
+                    onclick="return confirm('Xác nhận huỷ đơn?');"
+                  >
+                    Huỷ
+                  </button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5">Không có đơn hàng.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% elif section == 'customers' %}
+      <p>Danh sách khách hàng:</p>
+      <div class="table-responsive">
+        <table class="table">
+          <thead class="thead-dark">
+            <tr>
+              <th>#</th>
+              <th>Username</th>
+              <th>Email</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in customers %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td>{{ c.username }}</td>
+              <td>{{ c.email }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="3">Không có khách hàng.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p>
+        Phần này tạm thời là placeholder cho <strong>{{ title }}</strong>. Muốn
+        tôi triển khai chi tiết phần này không?
+      </p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}

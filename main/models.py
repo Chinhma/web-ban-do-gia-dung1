@@ -20,6 +20,11 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def formatted_price(self):
+        """Format price with thousand separator (e.g., 100.000đ)"""
+        return "{:,}".format(self.price).replace(',', '.')
+
 
 class CartItem(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='cart_items')
@@ -33,14 +38,23 @@ class CartItem(models.Model):
 
 
 class Order(models.Model):
+    # Store status directly in Vietnamese as requested
+    PENDING = 'Chờ xác nhận'
+    CONFIRMED = 'Đã xác nhận'
+    DELIVERING = 'Đang giao'
+    COMPLETED = 'Hoàn thành'
+    CANCELLED = 'Đã hủy'
+
     STATUS_CHOICES = (
-        ('pending', 'Pending'),
-        ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
+        (PENDING, PENDING),
+        (CONFIRMED, CONFIRMED),
+        (DELIVERING, DELIVERING),
+        (COMPLETED, COMPLETED),
+        (CANCELLED, CANCELLED),
     )
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='orders')
     created_at = models.DateTimeField(default=timezone.now)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default=PENDING)
     # keep existing DB field 'total' (added in migrations) and provide a
     # `total_price` property for templates/admin compatibility
     total = models.IntegerField(default=0)
@@ -51,6 +65,7 @@ class Order(models.Model):
     note = models.TextField(blank=True, null=True)
     # approval metadata
     approved_at = models.DateTimeField(blank=True, null=True)
+    completed_at = models.DateTimeField(blank=True, null=True)
     review_note = models.TextField(blank=True, null=True)
 
     @property
@@ -60,6 +75,34 @@ class Order(models.Model):
     def __str__(self):
         return f"Order #{self.id} - {self.user} - {self.status}"
 
+    @property
+    def status_vn(self):
+        """Return Vietnamese display status. If the DB still contains English
+        keywords, map them to Vietnamese equivalents for backward compatibility.
+        """
+        s = (self.status or '').strip()
+        # If already one of the Vietnamese constants, return directly
+        if s in {self.PENDING, self.CONFIRMED, self.DELIVERING, self.COMPLETED, self.CANCELLED}:
+            return s
+
+        # Map common English values to Vietnamese
+        en_to_vn = {
+            'pending': self.PENDING,
+            'waiting': self.PENDING,
+            'approved': self.CONFIRMED,
+            'confirmed': self.CONFIRMED,
+            'shipping': self.DELIVERING,
+            'delivering': self.DELIVERING,
+            'shipped': self.DELIVERING,
+            'completed': self.COMPLETED,
+            'done': self.COMPLETED,
+            'review': self.COMPLETED,
+            'rejected': self.CANCELLED,
+            'cancelled': self.CANCELLED,
+            'canceled': self.CANCELLED,
+        }
+
+        return en_to_vn.get(s.lower(), s)
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
