@@ -1,0 +1,18 @@
+{% extends 'main/layout.html' %}
+
+{% block content %}
+<div style="max-width:460px;margin:40px auto;padding:24px;background:white;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.08)">
+  <h2>Xác nhận OTP</h2>
+  <p>Nhập mã 6 chữ số đã gửi tới email của bạn.</p>
+  {% if error %}
+  <div style="color:#c00;margin-bottom:12px">{{ error }}</div>
+  {% endif %}
+  <p style="color:#666; font-size:13px">Nếu bạn đã yêu cầu đặt lại mật khẩu, hãy kiểm tra email để lấy mã OTP.</p>
+  <form method="post" action="{% url 'main:verify_otp' %}">
+    {% csrf_token %}
+    <input name="otp" placeholder="Nhập OTP" maxlength="6" style="width:100%;padding:10px;margin-bottom:12px;border:1px solid #ddd;border-radius:6px" required />
+    <button type="submit" style="width:100%;padding:10px;background:#4caf50;color:white;border:none;border-radius:6px">Xác nhận</button>
+  </form>
+  <p style="margin-top:12px"><a href="{% url 'main:forgot_password' %}">Gửi lại email</a></p>
+</div>
+{% endblock %}

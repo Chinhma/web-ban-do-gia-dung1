@@ -1,4 +1,5 @@
 {% extends 'main/layout.html' %}
+{% load socialaccount %}
 
 {% block content %}
 <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px">
@@ -171,20 +172,16 @@
 
     <!-- Social Sign Up -->
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px">
-      <button
-        style="padding: 10px; border: 2px solid #e0e0e0; background: white; border-radius: 6px; cursor: pointer; font-size: 13px; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px"
+      <a href="/accounts/google/login/" style="padding: 10px; border: 2px solid #e0e0e0; background: white; border-radius: 6px; cursor: pointer; font-size: 13px; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; color: inherit"
         onmouseover="this.style.borderColor='#667eea'; this.style.background='#f8f9ff'"
-        onmouseout="this.style.borderColor='#e0e0e0'; this.style.background='white'"
-      >
+        onmouseout="this.style.borderColor='#e0e0e0'; this.style.background='white'">
         <i class="fa-brands fa-google" style="color: #ea4335"></i> Google
-      </button>
-      <button
-        style="padding: 10px; border: 2px solid #e0e0e0; background: white; border-radius: 6px; cursor: pointer; font-size: 13px; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px"
+      </a>
+      <a href="/accounts/facebook/login/" style="padding: 10px; border: 2px solid #e0e0e0; background: white; border-radius: 6px; cursor: pointer; font-size: 13px; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; color: inherit"
         onmouseover="this.style.borderColor='#667eea'; this.style.background='#f8f9ff'"
-        onmouseout="this.style.borderColor='#e0e0e0'; this.style.background='white'"
-      >
+        onmouseout="this.style.borderColor='#e0e0e0'; this.style.background='white'">
         <i class="fa-brands fa-facebook" style="color: #1877f2"></i> Facebook
-      </button>
+      </a>
     </div>
 
     <!-- Login Link -->

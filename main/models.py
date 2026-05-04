@@ -112,3 +112,20 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.product} x{self.quantity}"
+
+
+class PasswordResetOTP(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    otp = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    # security fields
+    is_used = models.BooleanField(default=False)
+    attempts = models.IntegerField(default=0)
+
+    def is_expired(self):
+        from django.utils import timezone
+        return (timezone.now() - self.created_at).total_seconds() > 300  # 5 minutes
+
+    def __str__(self):
+        return f"OTP for {self.user} at {self.created_at} (is_used={self.is_used}, attempts={self.attempts})"

@@ -1,0 +1,36 @@
+{% extends 'main/layout.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'main/css/social-login.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="consent-page">
+  <div class="consent-card">
+    <div class="consent-left">
+      <div class="app-icon">HS</div>
+    </div>
+
+    <div class="consent-right">
+      <div class="consent-header">
+        <span class="google-small"><i class="fa-brands fa-google"></i></span>
+        <h2>Đăng nhập bằng Google</h2>
+      </div>
+
+      <p class="consent-desc">Bạn sắp đăng nhập bằng tài khoản Google. Tiếp tục để cho phép HomeStore truy cập thông tin tài khoản cơ bản của bạn.</p>
+
+      <div class="consent-provider">
+        <span class="provider-logo"><i class="fa-brands fa-google"></i></span>
+        <span class="provider-name">Google</span>
+      </div>
+
+      <form method="post" class="consent-actions">
+        {% csrf_token %}
+        <button type="submit" class="btn-primary">Tiếp tục với Google</button>
+        <a href="/" class="btn-link">Hủy</a>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

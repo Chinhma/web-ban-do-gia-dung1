@@ -49,6 +49,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
+    'django.contrib.sites',
+
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+
     'main',
 
 ]
@@ -62,6 +69,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -71,7 +79,7 @@ ROOT_URLCONF = 'web1.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+            'DIRS': [BASE_DIR / 'main' / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -141,13 +149,30 @@ MEDIA_ROOT = BASE_DIR / 'media'
 LOGIN_URL = 'main:login'
 LOGIN_REDIRECT_URL = 'main:home'
 
+# django-allauth / social auth
+SITE_ID = 2
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+
+# django-allauth account config
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+
 # Email configuration
-# By default use console backend for development (prints emails to the runserver console).
-# To send real email in production, set the following environment variables.
-EMAIL_BACKEND = os.environ.get('DJANGO_EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
-EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
-EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 25))
-EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'False') == 'True'
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'no-reply@homestore.local')
+# Email configuration: hard-coded Gmail SMTP (set here for convenience)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+# SMTP credentials (hard-coded per request)
+EMAIL_HOST_USER = 'chinhma2005@gmail.com'
+EMAIL_HOST_PASSWORD = 'nmjntktrzntgsuzm'
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

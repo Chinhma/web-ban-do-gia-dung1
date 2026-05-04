@@ -12,6 +12,10 @@ from django.http import JsonResponse
 import logging
 import threading
 import time
+import random
+from django.core.mail import send_mail
+from django.conf import settings
+from .models import PasswordResetOTP
 
 logger = logging.getLogger(__name__)
 
@@ -817,26 +821,116 @@ def forgot_password_view(request):
     """Handle forgot password requests"""
     if request.user.is_authenticated:
         return redirect("main:home")
-    
     if request.method == "POST":
         email = request.POST.get("email", "").strip()
-        
+
         if not email:
             messages.error(request, "Vui lòng nhập email!")
             return render(request, "main/forgot_password.html")
-        
+
         try:
             user = User.objects.get(email=email)
-            # In production, you would send an actual reset email here
-            # For now, we'll just show a success message
-            messages.success(request, f"Hướng dẫn đặt lại mật khẩu đã được gửi đến {email}")
-            return render(request, "main/forgot_password.html")
         except User.DoesNotExist:
-            # Don't reveal if email exists or not for security
-            messages.success(request, "Nếu email này tồn tại trong hệ thống, bạn sẽ nhận được email hướng dẫn.")
-            return render(request, "main/forgot_password.html")
-    
+            return render(request, "main/forgot_password.html", {"error": "Email không tồn tại"})
+
+        # generate 6-digit OTP
+        otp = f"{random.randint(0, 999999):06d}"
+        PasswordResetOTP.objects.create(user=user, otp=otp)
+
+        # send email using SMTP; let exceptions surface so they appear in console/logs
+        try:
+            send_mail(
+                "Mã OTP đặt lại mật khẩu",
+                f"Mã OTP của bạn là: {otp}",
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False,
+            )
+        except Exception:
+            logger.exception("Failed to send OTP email to %s", email)
+            # do not reveal internal error to user; show generic message
+            messages.error(request, "Không thể gửi email ngay bây giờ. Vui lòng thử lại sau.")
+
+        # set session and redirect to verify page (do NOT show OTP on page)
+        request.session["reset_user"] = user.id
+        request.session["otp_verified"] = False
+        messages.success(request, "Nếu email tồn tại trong hệ thống, mã OTP đã được gửi.")
+        return redirect("main:verify_otp")
+
     return render(request, "main/forgot_password.html")
+
+
+def verify_otp(request):
+    if request.user.is_authenticated:
+        return redirect("main:home")
+
+    user_id = request.session.get("reset_user")
+    if not user_id:
+        messages.error(request, "Vui lòng thực hiện bước yêu cầu mã OTP trước.")
+        return redirect('main:forgot_password')
+
+    if request.method == 'POST':
+        otp_input = request.POST.get('otp', '').strip()
+        otp_obj = PasswordResetOTP.objects.filter(user_id=user_id, is_used=False).order_by('-created_at').first()
+        if not otp_obj:
+            return render(request, 'main/verify_otp.html', {'error': 'Yêu cầu không hợp lệ hoặc đã hết hạn.'})
+
+        # expired check
+        if otp_obj.is_expired():
+            return render(request, 'main/verify_otp.html', {'error': 'OTP đã hết hạn. Vui lòng yêu cầu lại.'})
+
+        # increment attempts and block after too many tries
+        otp_obj.attempts = (otp_obj.attempts or 0) + 1
+        if otp_obj.attempts > 5:
+            otp_obj.save()
+            return render(request, 'main/verify_otp.html', {'error': 'Vượt quá số lần thử. Thử lại sau.'})
+
+        # check value
+        if otp_obj.otp == otp_input:
+            otp_obj.is_used = True
+            otp_obj.save()
+            request.session['otp_verified'] = True
+            return redirect('main:reset_password')
+        else:
+            otp_obj.save()
+            return render(request, 'main/verify_otp.html', {'error': 'OTP không chính xác'})
+
+    return render(request, 'main/verify_otp.html')
+
+
+def reset_password(request):
+    if request.user.is_authenticated:
+        return redirect('main:home')
+
+    user_id = request.session.get('reset_user')
+    if not user_id or not request.session.get('otp_verified'):
+        messages.error(request, 'Bạn cần xác thực OTP trước khi đổi mật khẩu.')
+        return redirect('main:forgot_password')
+
+    if request.method == 'POST':
+        password = request.POST.get('password', '')
+        confirm = request.POST.get('confirm', '')
+        if not password or not confirm:
+            return render(request, 'main/reset_password.html', {'error': 'Vui lòng nhập mật khẩu và xác nhận'})
+        if password != confirm:
+            return render(request, 'main/reset_password.html', {'error': 'Mật khẩu không khớp'})
+
+        try:
+            user = User.objects.get(id=user_id)
+            user.set_password(password)
+            user.save()
+        except User.DoesNotExist:
+            messages.error(request, 'Người dùng không tồn tại')
+            return redirect('main:forgot_password')
+
+        # cleanup session
+        request.session.pop('reset_user', None)
+        request.session.pop('otp_verified', None)
+
+        messages.success(request, 'Mật khẩu đã được đặt lại. Vui lòng đăng nhập với mật khẩu mới.')
+        return redirect('main:login')
+
+    return render(request, 'main/reset_password.html')
 
 
 # ========== ADMIN DASHBOARD VIEWS ==========
